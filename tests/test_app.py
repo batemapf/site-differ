@@ -4,8 +4,7 @@ Unit tests for Lambda handler logic.
 import unittest
 import sys
 import os
-import json
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch
 
 # Add lambda directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'lambda'))

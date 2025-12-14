@@ -161,7 +161,7 @@ def generate_html_body(changes: List[Dict[str, Any]], total_urls: int,
     for i, change in enumerate(changes, 1):
         html_parts.append(f"<div class='change'>")
         html_parts.append(f"<div class='change-header'>{i}. Change Detected</div>")
-        html_parts.append(f"<p><strong>URL:</strong> <a href='{change['url']}' class='url'>{change['url']}</a></p>")
+        html_parts.append(f"<p><strong>URL:</strong> <a href='{escape_html(change['url'])}' class='url'>{escape_html(change['url'])}</a></p>")
         
         if change['is_new']:
             html_parts.append("<p class='status'>Status: NEW URL</p>")

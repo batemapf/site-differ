@@ -10,8 +10,8 @@
 #### 1. IAM Least Privilege
 - Lambda execution role has minimal permissions:
   - DynamoDB: GetItem, PutItem, UpdateItem (scoped to specific table)
-  - SES: SendEmail, SendRawEmail (required for notifications)
-  - CloudWatch Logs: CreateLogGroup, CreateLogStream, PutLogEvents
+  - SES: SendEmail, SendRawEmail (scoped to SES identities in the region)
+  - CloudWatch Logs: CreateLogGroup, CreateLogStream, PutLogEvents (scoped to Lambda log group)
 - EventBridge Scheduler role has only Lambda:InvokeFunction permission
 
 #### 2. GitHub Actions Workflow Security

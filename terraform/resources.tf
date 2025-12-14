@@ -74,7 +74,7 @@ resource "aws_iam_policy" "lambda_policy" {
           "ses:SendEmail",
           "ses:SendRawEmail"
         ]
-        Resource = "*"
+        Resource = "arn:aws:ses:${var.region}:*:identity/*"
       },
       {
         Sid    = "Logs"
@@ -84,7 +84,7 @@ resource "aws_iam_policy" "lambda_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "*"
+        Resource = "${aws_cloudwatch_log_group.lambda_logs.arn}:*"
       }
     ]
   })

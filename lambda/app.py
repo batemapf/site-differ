@@ -6,8 +6,6 @@ import os
 import logging
 from typing import List, Dict, Optional, Any
 from datetime import datetime, timezone
-import boto3
-from botocore.exceptions import ClientError
 
 from fetcher import fetch_url
 from normalizer import normalize_html, compute_hash
@@ -163,13 +161,14 @@ def process_url(url_config: Dict[str, Any], ignore_patterns: List[str],
         state_update['last_modified'] = response['last_modified']
     
     # Check if we should notify
+    change_record = None
     if should_notify(url, prev_state, cooldown_hours):
         state_update['last_notified_at'] = now
         
         # Generate diff snippet
         diff_snippet = generate_diff_snippet(prev_text or "", normalized_text)
         
-        return {
+        change_record = {
             'url': url,
             'previous_hash': prev_hash,
             'new_hash': new_hash,
@@ -179,8 +178,9 @@ def process_url(url_config: Dict[str, Any], ignore_patterns: List[str],
     else:
         logger.info(f"Skipping notification for {url} due to cooldown")
     
+    # Always update state when content changes, regardless of notification
     update_state(url, state_update)
-    return None
+    return change_record
 
 
 def lambda_handler(event, context):

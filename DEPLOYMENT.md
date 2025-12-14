@@ -258,17 +258,132 @@ To enable automated deployments via GitHub Actions:
 
 ### 1. Create IAM User for GitHub Actions
 
+For security, use a custom IAM policy with least-privilege permissions instead of `AdministratorAccess`:
+
 ```bash
 # Create IAM user
 aws iam create-user --user-name github-actions-deploy
 
-# Attach required policies
+# Create a custom policy with minimal required permissions
+cat > github-actions-policy.json <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:CreateTable",
+        "dynamodb:DeleteTable",
+        "dynamodb:DescribeTable",
+        "dynamodb:ListTables",
+        "dynamodb:UpdateTable",
+        "dynamodb:TagResource"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "lambda:CreateFunction",
+        "lambda:DeleteFunction",
+        "lambda:GetFunction",
+        "lambda:UpdateFunctionCode",
+        "lambda:UpdateFunctionConfiguration",
+        "lambda:TagResource",
+        "lambda:AddPermission",
+        "lambda:RemovePermission"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateRole",
+        "iam:DeleteRole",
+        "iam:GetRole",
+        "iam:PassRole",
+        "iam:AttachRolePolicy",
+        "iam:DetachRolePolicy",
+        "iam:CreatePolicy",
+        "iam:DeletePolicy",
+        "iam:GetPolicy",
+        "iam:GetPolicyVersion",
+        "iam:TagRole",
+        "iam:TagPolicy"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:DeleteLogGroup",
+        "logs:DescribeLogGroups",
+        "logs:PutRetentionPolicy",
+        "logs:TagResource"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ses:VerifyEmailIdentity",
+        "ses:DeleteIdentity",
+        "ses:GetIdentityVerificationAttributes"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "scheduler:CreateSchedule",
+        "scheduler:DeleteSchedule",
+        "scheduler:GetSchedule",
+        "scheduler:UpdateSchedule",
+        "scheduler:TagResource"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:PutMetricAlarm",
+        "cloudwatch:DeleteAlarms",
+        "cloudwatch:DescribeAlarms"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sns:CreateTopic",
+        "sns:DeleteTopic",
+        "sns:GetTopicAttributes",
+        "sns:Subscribe",
+        "sns:Unsubscribe",
+        "sns:TagResource"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+
+# Create and attach the policy
+aws iam create-policy \
+  --policy-name GitHubActionsDeployPolicy \
+  --policy-document file://github-actions-policy.json
+
+# Get your AWS account ID
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+
+# Attach the policy to the user
 aws iam attach-user-policy \
   --user-name github-actions-deploy \
-  --policy-arn arn:aws:iam::aws:policy/AdministratorAccess
+  --policy-arn arn:aws:iam::${ACCOUNT_ID}:policy/GitHubActionsDeployPolicy
 ```
 
-**Note:** For production, use a more restrictive policy.
+**Security Note:** This policy follows least-privilege principles. For even tighter security, consider using OIDC federation with GitHub Actions instead of long-lived access keys.
 
 ### 2. Create Access Keys
 

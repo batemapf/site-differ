@@ -58,7 +58,21 @@ chmod +x build.sh
 cd ..
 ```
 
-### 3. Configure Terraform
+### 3. Verify SES Email
+
+Before deploying, verify your email addresses in AWS SES:
+
+```bash
+# Verify sender email
+aws ses verify-email-identity --email-address noreply@yourdomain.com
+
+# Verify recipient email (required if in SES sandbox)
+aws ses verify-email-identity --email-address your-email@example.com
+```
+
+Check your email inbox and click the verification links from AWS.
+
+### 4. Configure Terraform
 
 ```bash
 cd terraform
@@ -76,7 +90,7 @@ urls = [
 ]
 ```
 
-### 4. Deploy Infrastructure
+### 5. Deploy Infrastructure
 
 ```bash
 terraform init

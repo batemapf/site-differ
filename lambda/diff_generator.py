@@ -3,7 +3,6 @@ Diff snippet generation module.
 """
 import difflib
 import logging
-from typing import List
 
 logger = logging.getLogger(__name__)
 

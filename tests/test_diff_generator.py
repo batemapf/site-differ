@@ -53,7 +53,6 @@ class TestDiffGenerator(unittest.TestCase):
         new_text = '\n'.join(new_lines)
         
         snippet = generate_diff_snippet(old_text, new_text)
-        snippet_lines = snippet.splitlines()
         
         # Should be truncated with a message about more changes
         self.assertIn("more changes", snippet.lower())
@@ -68,7 +67,7 @@ class TestDiffGenerator(unittest.TestCase):
         """Test that long lines are truncated."""
         line = "x" * 300
         result = truncate_line(line)
-        self.assertTrue(len(result) < len(line))
+        self.assertLess(len(result), len(line))
         self.assertTrue(result.endswith("..."))
     
     def test_no_change(self):
@@ -83,7 +82,6 @@ class TestDiffGenerator(unittest.TestCase):
         new_lines = [f"Line {i}" for i in range(100)]
         new_text = '\n'.join(new_lines)
         snippet = generate_diff_snippet("", new_text)
-        snippet_lines = snippet.splitlines()
         
         # Should mention more lines
         self.assertIn("more lines", snippet.lower())
