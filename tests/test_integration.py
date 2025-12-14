@@ -5,6 +5,7 @@ import unittest
 import sys
 import os
 import json
+from datetime import datetime, timezone, timedelta
 from unittest.mock import patch
 
 # Add lambda directory to path
@@ -201,8 +202,6 @@ class TestLambdaHandlerIntegration(unittest.TestCase):
                                                            mock_fetch, mock_get_state, 
                                                            mock_update, mock_send_email):
         """Test that cooldown blocks notification but still updates state."""
-        from datetime import datetime, timezone, timedelta
-        
         # Last notified 1 hour ago (within 6 hour cooldown)
         last_notified = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
         

@@ -53,13 +53,13 @@ jobs:
     
     - name: Update Lambda configuration
       run: |
-        cat > env.json <<EOF
+        cat > env.json <<'EOF'
         {
           "Variables": {
             "DDB_TABLE": "website-diff-checker-state",
             "SES_FROM": "${{ secrets.SES_FROM_ADDRESS }}",
             "SES_TO": "${{ secrets.SES_TO_ADDRESS }}",
-            "URLS_JSON": ${{ toJson(secrets.MONITOR_URLS) }},
+            "URLS_JSON": "${{ secrets.MONITOR_URLS }}",
             "USER_AGENT": "Website-Diff-Checker/1.0",
             "COOLDOWN_HOURS": "0",
             "IGNORE_REGEX_JSON": "[]",
