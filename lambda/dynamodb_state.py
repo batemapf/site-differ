@@ -10,10 +10,19 @@ from botocore.exceptions import ClientError
 
 logger = logging.getLogger(__name__)
 
-# Initialize DynamoDB client
-dynamodb = boto3.resource('dynamodb')
-table_name = os.environ.get('DDB_TABLE', 'website_diff_state')
-table = dynamodb.Table(table_name)
+# Lazy initialization
+_dynamodb = None
+_table = None
+
+
+def _get_table():
+    """Get or create DynamoDB table resource."""
+    global _dynamodb, _table
+    if _table is None:
+        _dynamodb = boto3.resource('dynamodb')
+        table_name = os.environ.get('DDB_TABLE', 'website_diff_state')
+        _table = _dynamodb.Table(table_name)
+    return _table
 
 
 def get_state(url: str) -> Optional[Dict[str, Any]]:
@@ -27,6 +36,7 @@ def get_state(url: str) -> Optional[Dict[str, Any]]:
         Dict with state data or None if not found
     """
     try:
+        table = _get_table()
         response = table.get_item(Key={'url': url})
         item = response.get('Item')
         if item:
@@ -46,6 +56,7 @@ def update_state(url: str, updates: Dict[str, Any]) -> None:
         updates: Dict of attributes to update
     """
     try:
+        table = _get_table()
         # Build update expression
         update_expr_parts = []
         expr_attr_values = {}

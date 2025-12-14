@@ -10,8 +10,16 @@ from botocore.exceptions import ClientError
 
 logger = logging.getLogger(__name__)
 
-# Initialize SES client
-ses = boto3.client('ses')
+# Lazy initialization
+_ses = None
+
+
+def _get_ses_client():
+    """Get or create SES client."""
+    global _ses
+    if _ses is None:
+        _ses = boto3.client('ses')
+    return _ses
 
 
 def send_digest_email(changes: List[Dict[str, Any]], total_urls: int) -> None:
@@ -38,6 +46,7 @@ def send_digest_email(changes: List[Dict[str, Any]], total_urls: int) -> None:
     body_html = generate_html_body(changes, total_urls, now)
     
     try:
+        ses = _get_ses_client()
         response = ses.send_email(
             Source=from_address,
             Destination={

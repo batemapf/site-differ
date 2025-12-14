@@ -17,7 +17,7 @@ resource "aws_dynamodb_table" "website_diff_state" {
 
 # CloudWatch Log Group for Lambda
 resource "aws_cloudwatch_log_group" "lambda_logs" {
-  name              = "/aws/lambda/${aws_lambda_function.checker.function_name}"
+  name              = "/aws/lambda/${var.project_name}-checker"
   retention_in_days = var.log_retention_days
 
   tags = {
@@ -115,15 +115,15 @@ resource "aws_lambda_function" "checker" {
 
   environment {
     variables = {
-      DDB_TABLE           = aws_dynamodb_table.website_diff_state.name
-      SES_FROM            = var.ses_from_address
-      SES_TO              = join(",", var.ses_to_addresses)
-      URLS_JSON           = jsonencode(var.urls)
-      USER_AGENT          = var.user_agent
-      COOLDOWN_HOURS      = tostring(var.cooldown_hours)
-      IGNORE_REGEX_JSON   = var.ignore_regex_json
-      SELECTOR_MAP_JSON   = var.selector_map_json
-      LOG_LEVEL           = var.log_level
+      DDB_TABLE         = aws_dynamodb_table.website_diff_state.name
+      SES_FROM          = var.ses_from_address
+      SES_TO            = join(",", var.ses_to_addresses)
+      URLS_JSON         = jsonencode(var.urls)
+      USER_AGENT        = var.user_agent
+      COOLDOWN_HOURS    = tostring(var.cooldown_hours)
+      IGNORE_REGEX_JSON = var.ignore_regex_json
+      SELECTOR_MAP_JSON = var.selector_map_json
+      LOG_LEVEL         = var.log_level
     }
   }
 
