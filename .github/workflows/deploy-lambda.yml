@@ -1,0 +1,65 @@
+name: Deploy Lambda
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'lambda/**'
+      - '.github/workflows/deploy-lambda.yml'
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+    
+    - name: Build Lambda package
+      run: |
+        cd lambda
+        chmod +x build.sh
+        ./build.sh
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+    
+    - name: Deploy to Lambda
+      run: |
+        aws lambda update-function-code \
+          --function-name website-diff-checker-checker \
+          --zip-file fileb://lambda/lambda_function.zip
+    
+    - name: Wait for update to complete
+      run: |
+        aws lambda wait function-updated \
+          --function-name website-diff-checker-checker
+    
+    - name: Update Lambda configuration
+      run: |
+        aws lambda update-function-configuration \
+          --function-name website-diff-checker-checker \
+          --environment Variables="{
+            DDB_TABLE=website-diff-checker-state,
+            SES_FROM=${{ secrets.SES_FROM_ADDRESS }},
+            SES_TO=${{ secrets.SES_TO_ADDRESS }},
+            URLS_JSON='${{ secrets.MONITOR_URLS }}',
+            USER_AGENT=Website-Diff-Checker/1.0,
+            COOLDOWN_HOURS=0,
+            IGNORE_REGEX_JSON='[]',
+            SELECTOR_MAP_JSON='{}',
+            LOG_LEVEL=INFO
+          }"
