@@ -49,6 +49,12 @@ resource "aws_iam_role" "lambda_role" {
   }
 }
 
+# Locals for ARN construction
+locals {
+  ses_identity_arn      = "arn:aws:ses:${var.region}:*:identity/*"
+  cloudwatch_logs_arn   = "${aws_cloudwatch_log_group.lambda_logs.arn}:*"
+}
+
 # IAM Policy for Lambda
 resource "aws_iam_policy" "lambda_policy" {
   name        = "${var.project_name}-lambda-policy"
@@ -68,23 +74,23 @@ resource "aws_iam_policy" "lambda_policy" {
         Resource = aws_dynamodb_table.website_diff_state.arn
       },
       {
-        Sid    = "SendEmail"
-        Effect = "Allow"
-        Action = [
+        Sid      = "SendEmail"
+        Effect   = "Allow"
+        Action   = [
           "ses:SendEmail",
           "ses:SendRawEmail"
         ]
-        Resource = "arn:aws:ses:${var.region}:*:identity/*"
+        Resource = local.ses_identity_arn
       },
       {
-        Sid    = "Logs"
-        Effect = "Allow"
-        Action = [
+        Sid      = "Logs"
+        Effect   = "Allow"
+        Action   = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "${aws_cloudwatch_log_group.lambda_logs.arn}:*"
+        Resource = local.cloudwatch_logs_arn
       }
     ]
   })
