@@ -13,6 +13,9 @@ on:
       - '.github/workflows/terraform.yml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   AWS_REGION: us-east-1
 
