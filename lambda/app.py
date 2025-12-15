@@ -50,18 +50,22 @@ def load_ignore_patterns() -> List[str]:
         return []
 
 
-def should_notify(url: str, prev_state: Optional[Dict], cooldown_hours: int) -> bool:
+def should_notify(
+        url: str,
+        prev_state: Optional[Dict],
+        cooldown_hours: int) -> bool:
     """
     Determine if we should send a notification for this URL based on cooldown.
     """
     if cooldown_hours <= 0:
         return True
-    
+
     if not prev_state or 'last_notified_at' not in prev_state:
         return True
-    
+
     try:
-        last_notified = datetime.fromisoformat(prev_state['last_notified_at'].replace('Z', '+00:00'))
+        last_notified = datetime.fromisoformat(
+            prev_state['last_notified_at'].replace('Z', '+00:00'))
         now = datetime.now(timezone.utc)
         hours_since = (now - last_notified).total_seconds() / 3600
         return hours_since >= cooldown_hours
@@ -70,7 +74,7 @@ def should_notify(url: str, prev_state: Optional[Dict], cooldown_hours: int) -> 
         return True
 
 
-def process_url(url_config: Dict[str, Any], ignore_patterns: List[str], 
+def process_url(url_config: Dict[str, Any], ignore_patterns: List[str],
                 cooldown_hours: int) -> Optional[Dict[str, Any]]:
     """
     Process a single URL: fetch, normalize, hash, compare with state.
@@ -79,56 +83,64 @@ def process_url(url_config: Dict[str, Any], ignore_patterns: List[str],
     url = url_config['url']
     selector = url_config.get('selector')
     user_agent = os.environ.get('USER_AGENT', 'Website-Diff-Checker/1.0')
-    
+
     logger.info(f"Processing URL: {url}")
-    
+
     # Get previous state
     prev_state = get_state(url)
-    
+
     # Prepare conditional headers
     conditional_headers = {}
     if prev_state:
         if 'etag' in prev_state and prev_state['etag']:
             conditional_headers['If-None-Match'] = prev_state['etag']
         if 'last_modified' in prev_state and prev_state['last_modified']:
-            conditional_headers['If-Modified-Since'] = prev_state['last_modified']
-    
+            conditional_headers['If-Modified-Since'] = \
+                prev_state['last_modified']
+
     # Fetch URL
     try:
         response = fetch_url(url, user_agent, conditional_headers)
     except Exception as e:
         logger.error(f"Failed to fetch {url}: {e}")
         # Update error count
-        error_count = (prev_state.get('error_count', 0) if prev_state else 0) + 1
+        error_count = (
+            prev_state.get(
+                'error_count',
+                0) if prev_state else 0) + 1
         update_state(url, {
             'error_count': error_count,
             'last_error': str(e)[:500],
             'last_checked_at': datetime.now(timezone.utc).isoformat()
         })
         return None
-    
+
     # Handle 304 Not Modified
     if response['status_code'] == 304:
         logger.info(f"URL {url} returned 304 Not Modified")
         touch_state(url)
         return None
-    
+
     # Normalize and hash content
     try:
-        normalized_text = normalize_html(response['content'], selector, ignore_patterns)
+        normalized_text = normalize_html(
+            response['content'], selector, ignore_patterns)
         new_hash = compute_hash(normalized_text)
     except Exception as e:
         logger.error(f"Failed to normalize content from {url}: {e}")
-        error_count = (prev_state.get('error_count', 0) if prev_state else 0) + 1
+        error_count = (
+            prev_state.get(
+                'error_count',
+                0) if prev_state else 0) + 1
         update_state(url, {
             'error_count': error_count,
             'last_error': str(e)[:500],
             'last_checked_at': datetime.now(timezone.utc).isoformat()
         })
         return None
-    
+
     now = datetime.now(timezone.utc).isoformat()
-    
+
     # Compare with previous hash
     if prev_state and prev_state.get('last_hash') == new_hash:
         logger.info(f"No change detected for {url}")
@@ -138,13 +150,13 @@ def process_url(url_config: Dict[str, Any], ignore_patterns: List[str],
             'error_count': 0
         })
         return None
-    
+
     # Content changed or new URL
     prev_hash = prev_state.get('last_hash') if prev_state else None
     prev_text = prev_state.get('normalized_text') if prev_state else None
-    
+
     logger.info(f"Change detected for {url} (new hash: {new_hash})")
-    
+
     # Update state
     state_update = {
         'last_hash': new_hash,
@@ -153,21 +165,21 @@ def process_url(url_config: Dict[str, Any], ignore_patterns: List[str],
         'error_count': 0,
         'normalized_text': normalized_text  # Store for next diff
     }
-    
+
     # Store response headers for conditional requests
     if 'etag' in response:
         state_update['etag'] = response['etag']
     if 'last_modified' in response:
         state_update['last_modified'] = response['last_modified']
-    
+
     # Check if we should notify
     change_record = None
     if should_notify(url, prev_state, cooldown_hours):
         state_update['last_notified_at'] = now
-        
+
         # Generate diff snippet
         diff_snippet = generate_diff_snippet(prev_text or "", normalized_text)
-        
+
         change_record = {
             'url': url,
             'previous_hash': prev_hash,
@@ -177,7 +189,7 @@ def process_url(url_config: Dict[str, Any], ignore_patterns: List[str],
         }
     else:
         logger.info(f"Skipping notification for {url} due to cooldown")
-    
+
     # Always update state when content changes, regardless of notification
     update_state(url, state_update)
     return change_record
@@ -189,28 +201,28 @@ def lambda_handler(event, context):
     """
     logger.info("Starting Website Diff Checker Lambda")
     logger.debug(f"Event: {json.dumps(event)}")
-    
+
     # Load configuration
     url_configs = load_urls()
     ignore_patterns = load_ignore_patterns()
     cooldown_hours = int(os.environ.get('COOLDOWN_HOURS', '0'))
-    
+
     if not url_configs:
         logger.warning("No URLs configured")
         return {
             'statusCode': 200,
             'body': json.dumps({'message': 'No URLs to check'})
         }
-    
+
     logger.info(f"Checking {len(url_configs)} URLs")
-    
+
     # Process all URLs
     changes = []
     for url_config in url_configs:
         change = process_url(url_config, ignore_patterns, cooldown_hours)
         if change:
             changes.append(change)
-    
+
     # Send digest email if there are changes
     if changes:
         logger.info(f"Detected {len(changes)} changed URLs")
@@ -222,7 +234,7 @@ def lambda_handler(event, context):
             # Don't fail the whole run if email fails
     else:
         logger.info("No changes detected")
-    
+
     return {
         'statusCode': 200,
         'body': json.dumps({
