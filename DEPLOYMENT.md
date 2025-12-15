@@ -91,8 +91,29 @@ schedule_evening_cron = "cron(0 18 * * ? *)"  # 6 PM UTC
 
 ### 5. Deploy Infrastructure with Terraform
 
+#### 5a. Bootstrap Backend Resources (First-Time Only)
+
+For the first deployment, you need to create the Terraform backend resources (S3 bucket and DynamoDB table for state storage):
+
 ```bash
-# Initialize Terraform
+cd terraform/bootstrap
+terraform init
+terraform apply
+cd ..
+```
+
+Type `yes` when prompted to confirm.
+
+**Backend resources created:**
+- S3 bucket: `website-diff-checker-terraform-state` (for storing Terraform state)
+- DynamoDB table: `website-diff-checker-terraform-locks` (for state locking)
+
+**Note:** This step only needs to be done once. For subsequent deployments, skip to step 5b.
+
+#### 5b. Deploy Main Infrastructure
+
+```bash
+# Initialize Terraform with remote backend
 terraform init
 
 # Review the execution plan
@@ -256,6 +277,19 @@ schedule_evening_cron = "cron(0 */4 * * ? *)"  # Or disable by commenting out
 
 To enable automated deployments via GitHub Actions:
 
+### 0. Bootstrap Backend (First-Time Only)
+
+Before setting up GitHub Actions, you must create the backend resources manually once:
+
+```bash
+cd terraform/bootstrap
+terraform init
+terraform apply
+cd ..
+```
+
+This creates the S3 bucket and DynamoDB table for Terraform state storage. GitHub Actions will use these resources to maintain state between runs, preventing idempotency issues.
+
 ### 1. Create IAM User for GitHub Actions
 
 For security, use a custom IAM policy with least-privilege permissions instead of `AdministratorAccess`:
@@ -364,6 +398,28 @@ cat > github-actions-policy.json <<EOF
         "sns:TagResource"
       ],
       "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::website-diff-checker-terraform-state",
+        "arn:aws:s3:::website-diff-checker-terraform-state/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:DeleteItem"
+      ],
+      "Resource": "arn:aws:dynamodb:*:*:table/website-diff-checker-terraform-locks"
     }
   ]
 }
@@ -413,9 +469,12 @@ git push origin main
 ```
 
 GitHub Actions will automatically:
+- Ensure backend resources exist (creates them if needed)
 - Run tests on every push
 - Deploy Terraform changes to main branch
 - Deploy Lambda updates to main branch
+
+**Note:** The GitHub Actions workflow automatically checks if backend resources exist and creates them if needed, so you don't have to worry about running the bootstrap manually for CI/CD.
 
 ## Troubleshooting
 
@@ -494,11 +553,23 @@ terraform apply
 To remove all resources:
 
 ```bash
+# First, destroy main infrastructure
 cd terraform
 terraform destroy
 ```
 
 Type `yes` to confirm.
+
+**Optional:** To also remove backend resources (S3 bucket and DynamoDB table for Terraform state):
+
+```bash
+# Destroy backend resources
+cd bootstrap
+terraform destroy
+cd ..
+```
+
+**Warning:** Only destroy backend resources if you're completely removing the project and don't need the Terraform state history.
 
 ## Cost Estimate
 

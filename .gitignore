@@ -35,14 +35,16 @@ lambda/lambda_function.zip
 lambda/build/
 
 # Terraform
-terraform/.terraform/
-terraform/.terraform.lock.hcl
+**/.terraform/
+**/.terraform.lock.hcl
 terraform/terraform.tfstate
 terraform/terraform.tfstate.backup
 terraform/*.tfvars
 !terraform/terraform.tfvars.example
 terraform/.terraform.tfstate.lock.info
 terraform/crash.log
+terraform/bootstrap/terraform.tfstate
+terraform/bootstrap/terraform.tfstate.backup
 
 # IDE
 .vscode/
