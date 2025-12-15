@@ -1,0 +1,48 @@
+# Example terraform.tfvars file
+# Copy this to terraform.tfvars and fill in your values
+
+project_name = "website-diff-checker"
+region       = "us-east-1"
+
+# Schedule in EventBridge Scheduler cron format
+schedule_morning_cron = "cron(0 6 * * ? *)"   # 6 AM UTC daily
+schedule_evening_cron = "cron(0 18 * * ? *)"  # 6 PM UTC daily
+
+# URLs to monitor
+urls = [
+  "https://example.com",
+  "https://www.example.org/page",
+]
+
+# SES email configuration (must be verified in SES)
+ses_from_address = "noreply@yourdomain.com"
+ses_to_addresses = ["your-email@example.com"]
+
+# Optional: DynamoDB table name override
+# ddb_table_name = "custom-table-name"
+
+# Optional: CloudWatch logs retention
+# log_retention_days = 30
+
+# Optional: Lambda configuration
+# lambda_timeout = 30
+# lambda_memory_size = 256
+
+# Optional: User agent for HTTP requests
+# user_agent = "Website-Diff-Checker/1.0"
+
+# Optional: Cooldown period between notifications (hours)
+# cooldown_hours = 6
+
+# Optional: Regex patterns to ignore in content
+# ignore_regex_json = "[\"Last updated:.*\", \"Copyright \\\\d{4}\"]"
+
+# Optional: CSS selectors for specific URLs
+# selector_map_json = "{\"https://example.com\": \"#main-content\"}"
+
+# Optional: Logging level
+# log_level = "INFO"
+
+# Optional: Enable CloudWatch alarms
+# enable_alarms = true
+# alarm_email = "alerts@example.com"
