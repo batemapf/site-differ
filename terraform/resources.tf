@@ -49,10 +49,10 @@ resource "aws_iam_role" "lambda_role" {
   }
 }
 
-# Locals for ARN construction
+# Locals for ARN construction  
 locals {
-  ses_identity_arn      = "arn:aws:ses:${var.region}:*:identity/*"
-  cloudwatch_logs_arn   = "${aws_cloudwatch_log_group.lambda_logs.arn}:*"
+  ses_identity_arn    = format("arn:aws:ses:%s:*:identity/*", var.region)
+  cloudwatch_logs_arn = format("%s:*", aws_cloudwatch_log_group.lambda_logs.arn)
 }
 
 # IAM Policy for Lambda
