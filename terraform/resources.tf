@@ -74,18 +74,18 @@ resource "aws_iam_policy" "lambda_policy" {
         Resource = aws_dynamodb_table.website_diff_state.arn
       },
       {
-        Sid      = "SendEmail"
-        Effect   = "Allow"
-        Action   = [
+        Sid    = "SendEmail"
+        Effect = "Allow"
+        Action = [
           "ses:SendEmail",
           "ses:SendRawEmail"
         ]
         Resource = local.ses_identity_arn
       },
       {
-        Sid      = "Logs"
-        Effect   = "Allow"
-        Action   = [
+        Sid    = "Logs"
+        Effect = "Allow"
+        Action = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents"
