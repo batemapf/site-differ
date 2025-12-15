@@ -13,13 +13,13 @@ variable "region" {
 variable "schedule_morning_cron" {
   description = "Cron expression for morning check (EventBridge Scheduler format)"
   type        = string
-  default     = "cron(0 6 * * ? *)" # 6 AM UTC daily
+  default     = "cron(0 14 * * ? *)" # 2 PM UTC / 9 AM EST daily
 }
 
 variable "schedule_evening_cron" {
   description = "Cron expression for evening check (EventBridge Scheduler format)"
   type        = string
-  default     = "cron(0 18 * * ? *)" # 6 PM UTC daily
+  default     = "cron(0 23 * * ? *)" # 6 PM UTC / 6 PM EST daily
 }
 
 variable "urls" {
