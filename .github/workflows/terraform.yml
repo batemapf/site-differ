@@ -57,6 +57,20 @@ jobs:
       with:
         terraform_version: 1.6.0
     
+    - name: Ensure backend resources exist
+      working-directory: terraform/bootstrap
+      run: |
+        # Initialize bootstrap (uses local state)
+        terraform init
+        
+        # Check if backend resources exist, create if needed
+        if ! aws s3 ls s3://website-diff-checker-terraform-state 2>/dev/null; then
+          echo "Backend resources don't exist, creating them..."
+          terraform apply -auto-approve
+        else
+          echo "Backend resources already exist"
+        fi
+    
     - name: Terraform Format Check
       run: terraform fmt -check -recursive
     
